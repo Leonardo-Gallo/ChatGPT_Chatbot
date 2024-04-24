@@ -1,7 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI
 import sounddevice
+import pygame
 import speech_recognition as sr
+import time
 from gtts import gTTS
 import os
 from dotenv import load_dotenv
@@ -12,23 +14,31 @@ client = OpenAI(
     api_key=os.getenv("OPENAI_KEY")
 )
 
+pygame.mixer.init()
+
 def generate_response(prompt):
+    start_time = time.time()
     response = client.completions.create(
         model="gpt-3.5-turbo-instruct",
         prompt=prompt,
         temperature=0.5,
         max_tokens=150
     )
+    elapsed_time = time.time() - start_time
+    print(f"Response Gen: {elapsed_time} seconds")
     return response.choices[0].text.strip()
 
 def recognize_speech():
+    start_time = time.time()
     recognizer = sr.Recognizer()
-    with sr.Microphone(device_index=3) as source:
+    with sr.Microphone() as source:
         print("say something...")
-        audio = recognizer.listen(source, timeout=1)
+        audio = recognizer.listen(source, phrase_time_limit=5)
     try:
         user_input = recognizer.recognize_google(audio)
         print(f"You: {user_input}")
+        elapsed_time = time.time() - start_time
+        print(f"Speech recognition: {elapsed_time} seconds")
         return user_input
     except sr.UnknownValueError:
         print("Sorry I couldn't understand that")
@@ -38,9 +48,14 @@ def recognize_speech():
         return ""
 
 def text_to_speech(text):
+    start_time = time.time()
     tts = gTTS(text)
     tts.save("response.mp3")
-    os.system("mpg321 response.mp3")
+    pygame.mixer.music.load("response.mp3")
+    pygame.mixer.music.play()
+    pygame.mixer.music.wait()
+    elapsed_time = time.time() - start_time
+    print(f"tts: {elapsed_time} seconds")
 
 def main():
     print("welcome to my chatbot!")

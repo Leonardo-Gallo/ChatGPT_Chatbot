@@ -22,19 +22,24 @@ def generate_response(prompt):
 
 def recognize_speech():
     recognizer = sr.Recognizer()
-    with sr.Microphone(device_index=3) as source:
-        print("say something...")
-        audio = recognizer.listen(source, timeout=1)
+    with sr.Microphone() as source:
+        audio = recognizer.listen(source, phrase_time_limit=8)
     try:
         user_input = recognizer.recognize_google(audio)
         print(f"You: {user_input}")
         return user_input
     except sr.UnknownValueError:
-        print("Sorry I couldn't understand that")
-        return ""
+        print("...")
+        return recognize_speech()
     except sr.RequestError as e:
-        print(f"Speech recognition request failed: {e}")
-        return ""
+        print(f"Speech recognition request failed: {e} Try Again..")
+        return recognize_speech()
+def listen_for_keyword(keyword):
+     detected_word = recognize_speech().lower()
+     if keyword in detected_word:
+         return True
+     else:
+         return False
 
 def text_to_speech(text):
     tts = gTTS(text)
@@ -42,22 +47,24 @@ def text_to_speech(text):
     os.system("mpg321 response.mp3")
 
 def main():
-    print("welcome to my chatbot!")
-
+    os.system("mpg321 intro.mp3")
     while True:
-        user_input = recognize_speech()
 
-        if not user_input:
-            continue
-        if user_input.lower() in ['exit','quit']:
-            print("goodbye..")
-            break
-        
-        prompt = f"You: {user_input}\nGPT-3: "
-        response = generate_response(prompt)
+        if listen_for_keyword("hey chatbot"):
+            os.system("mpg321 dingding.mp3")
 
-        print(f"GPT-3: {response}")
-        text_to_speech(response)
+        while True:
+            os.system("mpg321 ding.mp3")
+            user_input = recognize_speech()
+            
+            if user_input in ['exit', 'goodbye']:
+                break
+            elif user_input:
+                response = generate_response(user_input)
+                text_to_speech(response)
+                os.system("mpg321 DING.mp3")
+            else:
+                continue
 
 if __name__ == "__main__":
     main()
